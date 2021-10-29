@@ -1,112 +1,137 @@
 # Robot-cortac-sped-
 Código del proyecto robot cortacésped para su visualización. 
 
-#include <LiquidCrystal.h>
-LiquidCrystal lcd(8, 9, 10, 11, 12, 13);
 
-#define DT A0
-#define SCK A1
-#define sw 2
+#include <NewPing.h>// Descarga la libreria "NewPing" arriba en la sección "Programa/Incluir Librería/Gestionar Libreria" si aun no la tienes.
+#include <Servo.h> 
 
-long sample=0;
-float val=0;
-long count=0;
+#define TRIG_PIN A0
+#define ECHO_PIN A1 
+#define MAX_DISTANCE 200 
+NewPing sonar(TRIG_PIN, ECHO_PIN, MAX_DISTANCE); 
+Servo myservo;   
 
-unsigned long readCount(void)
-{
-  unsigned long Count;
-  unsigned char i;
-  pinMode(DT, OUTPUT);
-  digitalWrite(DT,HIGH);
-  digitalWrite(SCK,LOW);
-  Count=0;
-  pinMode(DT, INPUT);
-  while(digitalRead(DT));
-  for (i=0;i<24;i++)
-  {
-    digitalWrite(SCK,HIGH);
-    Count=Count<<1;
-    digitalWrite(SCK,LOW);
-    if(digitalRead(DT)) 
-    Count++;
-  }
-  digitalWrite(SCK,HIGH);
-  Count=Count^0x800000;
-  digitalWrite(SCK,LOW);
-  return(Count);
-}
+boolean goesForward=false;
+int distance = 100;
+int speedSet = 0;
 
-void setup()
-{
-  Serial.begin(9600);
-  pinMode(SCK, OUTPUT);
-  pinMode(sw, INPUT_PULLUP);
-  lcd.begin(16, 2);
-  lcd.print("    Weight ");
-  lcd.setCursor(0,1);
-  lcd.print(" Measurement ");
-  delay(1000);
-  lcd.clear();
-  calibrate();
-}
+const int motorPin1  = 11;  
+const int motorPin2  = 10;  
+//Motor B
+const int motorPin3  = 6; 
+const int motorPin4  = 5;  
 
-void loop()
-{
-  count= readCount();
-  int w=(((count-sample)/val)-2*((count-sample)/val));
-  Serial.print("weight:");
-  Serial.print((int)w);
-  Serial.println("g");
-  lcd.setCursor(0,0);
-  lcd.print("Weight            ");
-  lcd.setCursor(0,1);
-  lcd.print(w);
-  lcd.print("g             ");
+void setup() {
 
-  if(digitalRead(sw)==0)
-  {
-    val=0;
-    sample=0;
-    w=0;
-    count=0;
-    calibrate();
-  }
-}
-
-void calibrate()
-{
-    lcd.clear();
-  lcd.print("Calibrating...");
-  lcd.setCursor(0,1);
-  lcd.print("Please Wait...");
-  for(int i=0;i<100;i++)
-  {
-    count=readCount();
-    sample+=count;
-    Serial.println(count);
-  }
-  sample/=100;
-  Serial.print("Avg:");
-  Serial.println(sample);
-  lcd.clear();
-  lcd.print("Put 100g & wait");
-  count=0;
-  while(count<1000)
-  {
-    count=readCount();
-    count=sample-count;
-    Serial.println(count);
-  }
-  lcd.clear();
-  lcd.print("Please Wait....");
+  myservo.attach(9);  
+  myservo.write(115); 
   delay(2000);
-  for(int i=0;i<100;i++)
-  {
-    count=readCount();
-    val+=sample-count;
-    Serial.println(sample-count);
-  }
-  val=val/100.0;
-  val=val/100.0;       
-  lcd.clear();
+  distance = readPing();
+  delay(100);
+  distance = readPing();
+  delay(100);
+  distance = readPing();
+  delay(100);
+  distance = readPing();
+  delay(100);
 }
+
+void loop() {
+ int distanceR = 0;
+ int distanceL =  0;
+ delay(40);
+ 
+ if(distance<=20)
+ {
+  moveStop();
+  delay(100);
+  moveBackward();
+  delay(300);
+  moveStop();
+  delay(200);
+  distanceR = lookRight();
+  delay(200);
+  distanceL = lookLeft();
+  delay(200);
+
+  if(distanceR>=distanceL)
+  {
+    turnRight();
+    moveStop();
+  }else
+  {
+    turnLeft();
+    moveStop();
+  }
+ }else
+
+ distance = readPing();
+}
+
+int lookRight()
+{
+    myservo.write(50); 
+    delay(100);
+    int distance = readPing();
+    delay(100);
+    myservo.write(115); 
+    return distance;
+}
+
+int lookLeft()
+{
+    myservo.write(170); 
+    delay(100);
+    int distance = readPing();
+    delay(100);
+    myservo.write(115); 
+    return distance;
+    delay(100);
+}
+
+int readPing() { 
+  delay(70);
+  int cm = sonar.ping_cm();
+  if(cm==0)
+  {
+    cm = 250;
+  }
+  return cm;
+}
+
+void moveStop() {
+    analogWrite(motorPin1, 0);
+    analogWrite(motorPin2, 0);
+    analogWrite(motorPin3, 0);
+    analogWrite(motorPin4, 0);
+  } 
+  
+
+
+void moveBackward() {
+    
+    analogWrite(motorPin1, 0);
+    analogWrite(motorPin2, 100);
+    analogWrite(motorPin3, 0);
+    analogWrite(motorPin4, 100);   
+  
+}  
+
+void turnRight() {
+    analogWrite(motorPin1, 100);
+    analogWrite(motorPin2, 0);
+    analogWrite(motorPin3, 0);
+    analogWrite(motorPin4, 100);    
+    delay(2500);
+      
+  
+} 
+ 
+void turnLeft() {
+    analogWrite(motorPin1, 0);
+    analogWrite(motorPin2, 100);   
+    analogWrite(motorPin3, 100);
+    analogWrite(motorPin4, 0);     
+    delay(250);
+ 
+}    
