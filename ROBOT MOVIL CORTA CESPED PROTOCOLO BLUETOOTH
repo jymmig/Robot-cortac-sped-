@@ -1,0 +1,121 @@
+
+
+#include <SoftwareSerial.h>
+#include <Servo.h>
+
+// CONEXIONES PARA EL BLUETOOTH.
+
+int bluetoothTx = 10;
+int bluetoothRx = 11;
+
+SoftwareSerial bluetooth(bluetoothTx, bluetoothRx);
+
+// MOTOR 1.
+
+int Motor1A = 9;
+int Motor1B = 8;
+
+// MOTOR 2.
+
+int Motor2A = 7;
+int Motor2B = 6;
+
+// sensor infrarojo
+
+const int sensor=2;
+
+//HABILITACION Y VELOCIDAD DE LOS MOTORES
+//MOTOR 1
+int IN5 = 5;
+//MOTOR2
+int IN6 =3;
+
+//VARIABLES
+
+int velocidad;
+int sensorinfrarojo;
+char datos;
+int velocidaddelcarro;
+
+
+void setup ()
+{
+  
+bluetooth.begin(115200);
+bluetooth.print("$$$");
+delay(100);
+bluetooth.println("U,9600,N");
+bluetooth.begin(9600);
+
+pinMode(sensor, INPUT);
+pinMode(IN5,OUTPUT);
+pinMode(IN6,OUTPUT);
+
+pinMode( Motor1A, OUTPUT );
+pinMode( Motor2A, OUTPUT );
+pinMode( Motor1B, OUTPUT );
+pinMode( Motor2B, OUTPUT );
+
+digitalWrite( Motor1A, LOW );
+digitalWrite( Motor2A, LOW );
+digitalWrite( Motor1B, LOW );
+digitalWrite( Motor2B, LOW );
+
+velocidad=0;
+
+}
+
+void loop()
+{
+if(bluetooth.available())
+{
+datos=bluetooth.read();
+velocidad=bluetooth.read();
+velocidaddelcarro=31*(velocidad);
+sensorinfrarojo = digitalRead(sensor);
+if( datos == 'F' && sensorinfrarojo==1)                  // Hacia adelante
+{
+digitalWrite( Motor1A, HIGH);
+digitalWrite( Motor1B, LOW );
+analogWrite(IN5, velocidaddelcarro);
+digitalWrite( Motor2A, HIGH);
+digitalWrite( Motor2B, LOW);
+analogWrite(IN6, velocidaddelcarro);
+}
+else if(datos == 'B')                                  // Hacia atras
+{
+digitalWrite( Motor1A, LOW);
+digitalWrite( Motor1B, HIGH);
+analogWrite(IN5, velocidaddelcarro);
+digitalWrite( Motor2A, LOW);
+digitalWrite( Motor2B, HIGH);
+analogWrite(IN6, velocidaddelcarro);
+}
+else if(datos == 'L' && sensorinfrarojo==1)             // Izquierda 
+{
+digitalWrite( Motor1A, LOW);
+digitalWrite( Motor1B, LOW );
+analogWrite(IN5, velocidaddelcarro);
+digitalWrite( Motor2A, HIGH);
+digitalWrite( Motor2B, LOW);
+analogWrite(IN6, velocidaddelcarro);
+}
+}
+else if(datos == 'R' && sensorinfrarojo==1)              //Derecha
+{
+digitalWrite( Motor1A, HIGH);
+digitalWrite( Motor1B, LOW );
+analogWrite(IN5, velocidaddelcarro);
+digitalWrite( Motor2A, LOW);
+digitalWrite( Motor2B, LOW);
+analogWrite(IN6, velocidaddelcarro);
+}
+
+else if(datos == 'S')                                    //Stop
+{
+digitalWrite( Motor1A, LOW);
+digitalWrite( Motor1B, LOW);
+digitalWrite( Motor2A, LOW);
+digitalWrite( Motor2B, LOW);
+} 
+}
